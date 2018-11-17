@@ -44,6 +44,16 @@
 /*------------------------------------------------*/
 /* PROGRAMME PRINCIPAL ---------------------------*/                     
 /*------------------------------------------------*/
+void ppvoisin(float** dest,float** source,float length,float width){
+
+
+
+}
+void bilineaire(float** dest,float** source,float length,float width){
+
+
+  
+}
 int main()
  {
   int i,j;
