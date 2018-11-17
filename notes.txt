@@ -1,0 +1,16 @@
+Transformée de RADON
+
+evaluer l'ensemble des projection circulaire p\theta pour les angles 
+0->179 pas de 1deg
+-> pour obtenir les projection, il faut faire tourner l'image autour de son centre
+et utiliser une interpolation bilineaire puis projeter les resultat sur l'axe des x. 
+c'est l'ensemble des projection qui correspond à la transformée de radon on obtien une image
+de taille 180 x 128
+
+
+Transformée-1 de RADON:
+
+Utiliser la methode de l'approche directe de fourier, en utilisant le theoreme de la tranchecentrale de fourier
+
+
+
