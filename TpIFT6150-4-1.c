@@ -50,7 +50,7 @@
 /*
  fonction valeur d'une matrice a un point m[j][i]
 */
-float valeur(float** m, int j, int i) {
+float f(float** m, int j, int i) {
 
     if( i <=0 || i >= LENGTH){
 
@@ -68,8 +68,9 @@ float valeur(float** m, int j, int i) {
         float angle     : angle de rotation en degrés
 */
 void ppv(float** dest,float** source,float angle){
-
+    //transformer angle en gradient
     angle= ( angle*M_PI )/180;
+    //Declaration des variables
     int j1,i1;
     float jppv,ippv;
 
@@ -81,14 +82,13 @@ void ppv(float** dest,float** source,float angle){
 
             j1 = round(jppv);
             i1 = round(ippv);
-            dest[i][j] = valeur(source, j1, i1);
+            //f(x',y')
+            dest[i][j] = f(source, j1, i1);
             }
 
     }
 
 }
-
-
 
 /*interpolation bilineaire
 param:  float ** dest   : matrice resultat de l'interpolation
@@ -96,8 +96,30 @@ param:  float ** dest   : matrice resultat de l'interpolation
         float angle     : angle de rotation en degrés
 */
 
-void bilineaire(float** dest,float** src,float angle){
+void bilineaire(float** dest,float** source,float angle){
+    //transformer angle en gradient
+    angle= ( angle*M_PI )/180;
+    //declaration de variables
+    int xp,yp;
+    float fxpy,fxpy1;
 
+    for(int i=0; i<LENGTH; i++) {
+
+        for(int j=0; j<WIDTH; j++) {
+            //x'
+            xp = floor( (j - WIDTH/2) * cos(-angle) + (i - LENGTH/2) * sin(-angle) + WIDTH/2);
+            //y'
+            yp = floor(-(j - WIDTH/2) * sin(-angle) + (i - LENGTH/2) * cos(-angle) + LENGTH/2);
+
+
+            //f(x',y)
+            fxpy = f(source, xp, yp) + (xp - xp)*(f(source, xp + 1, yp) - f(source, xp, yp));
+            //f(x,y+1)
+            fxpy1 = f(source, xp, yp + 1) + (xp - xp) * (f(source, xp + 1, yp + 1) - f(source, xp, yp + 1));
+            //f(x',y')
+            dest[i][j] = fxpy + (yp - yp) * (fxpy1 - fxpy);
+        }
+    }
   }
 
 
@@ -116,6 +138,7 @@ int main()
   float** MatMFFT;
   float** Mat1;
   float** Mat2;
+  float** test;
   float*  VctR;
   float*  VctI;
 
@@ -129,6 +152,8 @@ int main()
   MatIFFT=fmatrix_allocate_2d(LENGTH,WIDTH);
   MatMFFT=fmatrix_allocate_2d(LENGTH,WIDTH);
   Mat1=fmatrix_allocate_2d(LENGTH,WIDTH);
+  test=fmatrix_allocate_2d(LENGTH,WIDTH);
+
   Mat2=fmatrix_allocate_2d(LENGTH,WIDTH);
 
   /*Allocation memoire des vecteurs*/
@@ -159,7 +184,8 @@ int main()
    //----------------------------------
    LoadImagePgm(NAME_IMG_IN, MatriceImgG, LENGTH, WIDTH);
    /* Interpolation bilineaire = deux directions a interpoler*/
-   ppv(Mat1, MatriceImgG, 45);
+   //ppv(Mat1, MatriceImgG, 45);
+   bilineaire(test,MatriceImgG,45);
 
 
   //-----------------------
@@ -213,7 +239,7 @@ int main()
   /*-------- FIN ---------------------------------------------*/
   /*----------------------------------------------------------*/
   /*Sauvegarde des matrices sous forme d'image pgms*/
-  SaveImagePgm(NAME_IMG_OUT0,Mat1,LENGTH,WIDTH);
+  SaveImagePgm(NAME_IMG_OUT0,test,LENGTH,WIDTH);
 
   /*Liberation memoire pour les matrices*/
   free_fmatrix_2d(MatriceImgG);
