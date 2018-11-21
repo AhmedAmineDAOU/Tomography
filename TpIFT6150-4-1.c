@@ -2,7 +2,7 @@
 /* Prog    :                                           */
 /* Auteur  :                                            */
 /* Date    :                                            */
-/* version :                                            */ 
+/* version :                                            */
 /* langage : C                                          */
 /* labo    : DIRO                                       */
 /*------------------------------------------------------*/
@@ -23,11 +23,11 @@
 #define NAME_IMG_IN  "lenna"
 
 #define NAME_IMG_OUT0 "ImgOut0"
-#define NAME_IMG_OUT1 "ImgOut1" 
-#define NAME_IMG_OUT2 "ImgOut2" 
-#define NAME_IMG_OUT3 "ImgOut3"  
+#define NAME_IMG_OUT1 "ImgOut1"
+#define NAME_IMG_OUT2 "ImgOut2"
+#define NAME_IMG_OUT3 "ImgOut3"
 #define NAME_IMG_OUT4 "ImgOut4"
-#define NAME_IMG_OUT5 "ImgOut5" 
+#define NAME_IMG_OUT5 "ImgOut5"
 
 #define NB_PROJECTIONS 180
 #define LENGTH 128
@@ -35,30 +35,77 @@
 
 #define LENGTH_RADON NB_PROJECTIONS
 #define WIDTH_RADON  WIDTH
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+#define M_PI 3.14159265358979323846
 
 /*------------------------------------------------*/
-/* FONCTIONS -------------------------------------*/                     
+/* FONCTIONS -------------------------------------*/
 /*------------------------------------------------*/
 
 
 /*------------------------------------------------*/
-/* PROGRAMME PRINCIPAL ---------------------------*/                     
+/* PROGRAMME PRINCIPAL ---------------------------*/
 /*------------------------------------------------*/
-void ppvoisin(float** dest,float** source,float length,float width){
 
+/*
+ fonction valeur d'une matrice a un point m[j][i]
+*/
+float valeur(float** m, int j, int i) {
 
+    if( i <=0 || i >= LENGTH){
+
+        return 0.0;}
+
+    else if( j<=0 || j >= WIDTH){
+
+        return 0.0;}
+
+    return m[i][j];
+}
+/*Interpolation plus proche voisin
+ param: float ** dest   : matrice resultat de l'interpolation
+        float ** source : matrice a interpoler
+        float angle     : angle de rotation en degrés
+*/
+void ppv(float** dest,float** source,float angle){
+
+    angle= ( angle*M_PI )/180;
+    int j1,i1;
+    float jppv,ippv;
+
+    for(int i =0; i < LENGTH; i ++) {
+        for(int j =0; j < WIDTH; j ++) {
+
+            jppv =  (j - WIDTH / 2) * cos(-angle) + (i - LENGTH / 2) * sin(-angle) + WIDTH / 2;
+            ippv = -(j - WIDTH / 2) * sin(-angle) + (i - LENGTH / 2) * cos(-angle) + LENGTH / 2;
+
+            j1 = round(jppv);
+            i1 = round(ippv);
+            dest[i][j] = valeur(source, j1, i1);
+            }
+
+    }
 
 }
-void bilineaire(float** dest,float** source,float length,float width){
 
 
-  
-}
+
+/*interpolation bilineaire
+param:  float ** dest   : matrice resultat de l'interpolation
+        float ** source : matrice a interpoler
+        float angle     : angle de rotation en degrés
+*/
+
+void bilineaire(float** dest,float** src,float angle){
+
+  }
+
+
+
 int main()
  {
   int i,j;
-  float rotat;
-  
+
   float** MatriceImgG;
   float** MatriceRadon;
   float** MatriceRadonRFFT;
@@ -71,7 +118,7 @@ int main()
   float** Mat2;
   float*  VctR;
   float*  VctI;
-  
+
   /*Allocation memoire des matrices*/
   MatriceImgG=fmatrix_allocate_2d(LENGTH,WIDTH);
   MatriceRadon=fmatrix_allocate_2d(LENGTH_RADON,WIDTH_RADON);
@@ -89,7 +136,7 @@ int main()
   VctI=fmatrix_allocate_1d(WIDTH);
 
   /*Initialisation a zero de toutes les matrices*/
-  for(i=0;i<LENGTH;i++) for(j=0;j<WIDTH;j++) 
+  for(i=0;i<LENGTH;i++) for(j=0;j<WIDTH;j++)
    { MatriceImgG[i][j]=0.0;
      MatRFFT[i][j]=0.0;
      MatIFFT[i][j]=0.0;
@@ -104,17 +151,17 @@ int main()
        MatriceRadonMFFT[i][j]=0.0; }
 
   /*Initialisation a zero de tous les vecteurs*/
-   for(i=0;i<WIDTH;i++) 
+   for(i=0;i<WIDTH;i++)
      { VctR[i]=0.0;
        VctI[i]=0.0; }
-    
+
    //On charge l'image dans MatriceImgG
    //----------------------------------
-   LoadImagePgm(NAME_IMG_IN,MatriceImgG,LENGTH,WIDTH);
+   LoadImagePgm(NAME_IMG_IN, MatriceImgG, LENGTH, WIDTH);
    /* Interpolation bilineaire = deux directions a interpoler*/
+   ppv(Mat1, MatriceImgG, 45);
 
-  
- 
+
   //-----------------------
   //Nouvelles Fonctions ---
   //-----------------------
@@ -123,37 +170,37 @@ int main()
   /* ----------------------------------------                             */
   /* FFT1D(VctR,VctI,WIDTH)                                               */
   /*                                                                      */
-  /* VctR: vecteur associe au valeurs reelles                             */   
+  /* VctR: vecteur associe au valeurs reelles                             */
   /* VctI: vecteur associe au valeurs imaginaires                         */
   /* WIDTH      : Largeur des deux vecteurs                               */
   /* ------                                                               */
   /* Resultat de cette FFT:                                               */
   /* VctR: Partie reelle de la FFT                                        */
   /* VctI: Partie imaginaire de la FFT                                    */
-  /*----------------------------------------------------------------------*/    
+  /*----------------------------------------------------------------------*/
   /*----------------------------------------------------------------------*/
   /* Transforme de Fourier monodimensionnelle inverse:                    */
   /* ------------------------------------------------                     */
   /* IFFTDD(VctR,VctI,WIDTH)                                              */
-  /*                                                                      */ 
-  /* VctR: vecteur associe au valeurs reelles                             */   
+  /*                                                                      */
+  /* VctR: vecteur associe au valeurs reelles                             */
   /* VctI: vecteur associe au valeurs imaginaires                         */
   /* WIDTH      : Largeur des deux vecteurs                               */
   /* ------                                                               */
   /* Resultat de cette FFT inverse:                                       */
   /* VctR: Partie reelle de la FFT inverse                                */
   /* VctI: Partie imaginaire de la FFT inverse                            */
-  /*----------------------------------------------------------------------*/   
+  /*----------------------------------------------------------------------*/
   /*----------------------------------------------------------------------*/
   /* ReMkeVct(Vct,WIDTH)                                                  */
   /* --------------------------                                           */
   /* Recadre le Vecteur Vct de largeur WIDTH                              */
   /* selon les 2 cadrants                                                 */
-  /*----------------------------------------------------------------------*/  
+  /*----------------------------------------------------------------------*/
   /*----------------------------------------------------------------------*/
   /* Module de la FFT1D                                                   */
   /* ------------------                                                   */
-  /* ModVct(VctM,VctR,VctI,WIDTH)                                         */ 
+  /* ModVct(VctM,VctR,VctI,WIDTH)                                         */
   /*                                                                      */
   /* VctR: partie reelle du vecteur                                       */
   /* VctI: partie imaginaire du vecteur                                   */
@@ -166,10 +213,10 @@ int main()
   /*-------- FIN ---------------------------------------------*/
   /*----------------------------------------------------------*/
   /*Sauvegarde des matrices sous forme d'image pgms*/
-  SaveImagePgm(NAME_IMG_OUT0,MatriceImgG,LENGTH,WIDTH);
-  
+  SaveImagePgm(NAME_IMG_OUT0,Mat1,LENGTH,WIDTH);
+
   /*Liberation memoire pour les matrices*/
-  free_fmatrix_2d(MatriceImgG); 
+  free_fmatrix_2d(MatriceImgG);
   free_fmatrix_2d(MatriceRadon);
   free_fmatrix_2d(MatriceRadonRFFT);
   free_fmatrix_2d(MatriceRadonIFFT);
@@ -177,17 +224,18 @@ int main()
   free_fmatrix_2d(MatRFFT);
   free_fmatrix_2d(MatIFFT);
   free_fmatrix_2d(MatMFFT);
-  free_fmatrix_2d(Mat1); 
-  free_fmatrix_2d(Mat2); 
+  free_fmatrix_2d(Mat1);
+  free_fmatrix_2d(Mat2);
 
   /*Liberation memoire pour les vecteurs*/
   free(VctR);
-  free(VctI);   
+  free(VctI);
 
   /*Commande systeme: visualisation de Ingout.pgm*/
   system("display ImgOut0.pgm&");
-  
-  /*retour sans probleme*/ 
+
+  /*retour sans probleme*/
   printf("\n C'est fini ... \n\n\n");
-  return 0; 	 
+  return 0;
 }
+

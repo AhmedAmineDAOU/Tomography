@@ -15,7 +15,7 @@ Vous devez fournir le programme suivant:
      TpIFT6150-5-2.c
      TpIFT6150-5-3.c 
 
-qui doit produire les images demandées dans l'énoncé du TP5
+qui doit produire les images demandées dans l'énoncé du TP4
 pour la question 1, 2 et 3.
 
 Le programme doit compiler sous Linux.
