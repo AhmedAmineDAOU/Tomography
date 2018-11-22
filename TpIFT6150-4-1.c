@@ -46,34 +46,74 @@
 /* FONCTIONS -------------------------------------*/
 /*------------------------------------------------*/
 
+float f(float** m, int j, int i) {
+
+    if(i < 0 || i >= LENGTH)
+        i = (i + LENGTH) % LENGTH;
+
+    if(j < 0 || j >= WIDTH)
+        j = (j + WIDTH) % WIDTH;
+
+    return m[i][j];
+}
 
 
 
+void bilineaire(float** source, float** dest, float angle) {
+    int x,y;
+    float xp,yp,fxpy,fxpy1;
+    angle=angle*PI/180;
 
+    for(int i=0; i<LENGTH; i++) {
+        for(int j=0; j<WIDTH; j++) {
 
+            xp =  (j - WIDTH/2) * cos(-angle) + (i - LENGTH/2) * sin(-angle) + WIDTH/2;
+            yp = -(j - WIDTH/2) * sin(-angle) + (i - LENGTH/2) * cos(-angle) + LENGTH/2;
+
+            x = floor(xp);
+            y = floor(yp);
+
+            fxpy = f(source, x, y) + (xp - x)*(f(source, x + 1, y) - f(source, x, y));
+            fxpy1 = f(source, x, y + 1)
+                + (xp - x) * (f(source, x + 1, y + 1) - f(source, x, y + 1));
+
+            dest[i][j] = fxpy + (yp - y) * (fxpy1 - fxpy);
+        }
+    }
+}
+/*distancebc: distance entre B et C*/
 float distancebc(){
 
        return sqrt(CARRE(xc-xb)+CARRE (yc-yb));
 }
+
+/*distanceb: distance entre A et B
+  param: coordonnées du point A
+*/
 float distanceb(int xa,int ya){
    return  sqrt(CARRE(xa-xb)+CARRE(ya-yb));
 
 }
-
+/*distancec: distance entre a c
+*/
 float distancec(int xa,int ya){
    return  sqrt(CARRE(xa-xc)+CARRE(ya-yc));
 
 }
-
+/*theta : calcule l'angle entre BC et BA
+  calcule le produit scalaire BC.BA (numerateur du cos)
+  calcule le produit des normes des vecteurs BC ET BA (denumerateur du cos)
+  puis calcule l'arctangente de la fraction =>arcos(cos(theta))
+  param: coordonnées du point A
+ *return: angle theta
+*/
 float theta(int xa,int ya)
 {
     float numerateur, denumerateur, angle;
     //initialisation
      numerateur=denumerateur=angle=0.0;
-
     //produit scalaire des vecteur BC et BA
     numerateur=(xa-xb)*(xc-xb) +(ya-yb)*(yc-yb);
-
 
     //produit des normes
     denumerateur=distanceb(xa,ya)*distancebc(); //||AB||*||BC||
@@ -86,19 +126,21 @@ float theta(int xa,int ya)
     return (angle*(180.0/PI));
 }
 
+/*Reconstitue le spectre à partir de la transformée de Radon
+   param: MatRFFT spectre partie reelle
+        : MatIFFT spectre partie imaginaire
+        : MatriceRadonRFFT radon partie reelle
+        : MatriceRadonIFFT radon partie imaginaire
+*/
 void reconstituerspectre(float** MatRFFT, float** MatIFFT, float** MatriceRadonRFFT, float** MatriceRadonIFFT) {
-    /*int i, j, x, y, angle1, rayon1;
+    int i, j, x, y;
 
-    float angle, rayon, f1, f2;
-    int angle,distance;
+    float angle, rayon;
     for(i=0; i<LENGTH/2; i++)
         for(j=0; j<WIDTH; j++) {
-            //partie reelle
-            MatRFFT[angle][distance]=
 
-            //partie imaginaire
 
-        }*/
+        }
 }
 
 /*------------------------------------------------*/
@@ -106,7 +148,7 @@ void reconstituerspectre(float** MatRFFT, float** MatIFFT, float** MatriceRadonR
 /*------------------------------------------------*/
 int main(int argc, char** argv)
 {
-    int i, j, k;
+    int i, j, p;
     float **MatriceImgG;
     float **MatriceRadon;
     float **MatriceRadonRFFT;
@@ -165,19 +207,19 @@ int main(int argc, char** argv)
     //----------------------------------
     LoadImagePgm(NAME_IMG_IN, MatriceImgG, LENGTH, WIDTH);
 
-    for(k=0; k<NB_PROJECTIONS; k++) {
-        //rotation bilineaire d'angle k
-        bilineaire(MatriceImgG, Mat1, k );
+    for(p=0; p<NB_PROJECTIONS; p++) {
+        //rotation bilineaire d'angle p
+        bilineaire(MatriceImgG, Mat1, p );
 
         //Construction de matrice Radon
         for(i=0; i<LENGTH; i++)
             for(j=0; j<WIDTH; j++) {
                 //somme de niveaux de gris
-                MatriceRadon[k][j] += Mat1[i][j];
+                MatriceRadon[p][j] += Mat1[i][j];
             }
         //construction des VctR a partir de la matrice de Radon
         for(i=0; i<WIDTH; i++) {
-            VctR[i] = MatriceRadon[k][i];
+            VctR[i] = MatriceRadon[p][i];
             VctI[i] = 0.0;
         }
         //Premier Remake vector de VctR et VctI
@@ -192,8 +234,8 @@ int main(int argc, char** argv)
 
        //Maintenant MatriceRadonRFFT & MatriceRadonIFFT constituent la transformée de Radon de Lenna
         for(j=0; j<WIDTH; j++) {
-            MatriceRadonRFFT[k][j] = VctR[j];
-            MatriceRadonIFFT[k][j] = VctI[j];
+            MatriceRadonRFFT[p][j] = VctR[j];
+            MatriceRadonIFFT[p][j] = VctI[j];
         }
     }
 
@@ -214,7 +256,7 @@ int main(int argc, char** argv)
     //reconstruction
     reconstituerspectre(MatRFFT, MatIFFT, MatriceRadonRFFT, MatriceRadonIFFT);
 
-
+    //Remake vector partie reelle & imaginaire du spectre
     ReMkeImg(MatRFFT, LENGTH, WIDTH);
     ReMkeImg(MatIFFT, LENGTH, WIDTH);
 
@@ -255,51 +297,3 @@ int main(int argc, char** argv)
     return 0;
 }
 
-//-----------------------
-//Nouvelles Fonctions ---
-//-----------------------
-/*----------------------------------------------------------------------*/
-/* Transforme de Fourier monodimensionnelle:                            */
-/* ----------------------------------------                             */
-/* FFT1D(VctR,VctI,WIDTH)                                               */
-/*                                                                      */
-/* VctR: vecteur associe au valeurs reelles                             */
-/* VctI: vecteur associe au valeurs imaginaires                         */
-/* WIDTH      : Largeur des deux vecteurs                               */
-/* ------                                                               */
-/* Resultat de cette FFT:                                               */
-/* VctR: Partie reelle de la FFT                                        */
-/* VctI: Partie imaginaire de la FFT                                    */
-/*----------------------------------------------------------------------*/
-/*----------------------------------------------------------------------*/
-/* Transforme de Fourier monodimensionnelle inverse:                    */
-/* ------------------------------------------------                     */
-/* IFFTDD(VctR,VctI,WIDTH)                                              */
-/*                                                                      */
-/* VctR: vecteur associe au valeurs reelles                             */
-/* VctI: vecteur associe au valeurs imaginaires                         */
-/* WIDTH      : Largeur des deux vecteurs                               */
-/* ------                                                               */
-/* Resultat de cette FFT inverse:                                       */
-/* VctR: Partie reelle de la FFT inverse                                */
-/* VctI: Partie imaginaire de la FFT inverse                            */
-/*----------------------------------------------------------------------*/
-/*----------------------------------------------------------------------*/
-/* ReMkeVct(Vct,WIDTH)                                                  */
-/* --------------------------                                           */
-/* Recadre le Vecteur Vct de largeur WIDTH                              */
-/* selon les 2 cadrants                                                 */
-/*----------------------------------------------------------------------*/
-/*----------------------------------------------------------------------*/
-/* Module de la FFT1D                                                   */
-/* ------------------                                                   */
-/* ModVct(VctM,VctR,VctI,WIDTH)                                         */
-/*                                                                      */
-/* VctR: partie reelle du vecteur                                       */
-/* VctI: partie imaginaire du vecteur                                   */
-/* ------                                                               */
-/* Resultat:                                                            */
-/* VctM: module du vecteur                                              */
-/*----------------------------------------------------------------------*/
-
-/*-------- FIN ---------------------------------------------*/
