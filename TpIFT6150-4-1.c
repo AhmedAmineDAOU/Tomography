@@ -1,6 +1,6 @@
 /*------------------------------------------------------*/
-/* Prog    :                                           */
-/* Auteur  :                                            */
+/* Prog    : TpIFT6150                                  */
+/* Auteur  : Ahmed Amine DAOU & Warshe Wrushabh         */
 /* Date    :                                            */
 /* version :                                            */
 /* langage : C                                          */
@@ -32,236 +32,274 @@
 #define NB_PROJECTIONS 180
 #define LENGTH 128
 #define WIDTH  128
+#define xb WIDTH/2
+#define yb LENGTH/2
+#define xc WIDTH
+#define yc LENGTH/2
+
+
 
 #define LENGTH_RADON NB_PROJECTIONS
 #define WIDTH_RADON  WIDTH
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-#define M_PI 3.14159265358979323846
 
 /*------------------------------------------------*/
 /* FONCTIONS -------------------------------------*/
 /*------------------------------------------------*/
 
 
+
+
+
+
+float distancebc(){
+
+       return sqrt(CARRE(xc-xb)+CARRE (yc-yb));
+}
+float distanceb(int xa,int ya){
+   return  sqrt(CARRE(xa-xb)+CARRE(ya-yb));
+
+}
+
+float distancec(int xa,int ya){
+   return  sqrt(CARRE(xa-xc)+CARRE(ya-yc));
+
+}
+
+float theta(int xa,int ya)
+{
+    float numerateur, denumerateur, angle;
+    //initialisation
+     numerateur=denumerateur=angle=0.0;
+
+    //produit scalaire des vecteur BC et BA
+    numerateur=(xa-xb)*(xc-xb) +(ya-yb)*(yc-yb);
+
+
+    //produit des normes
+    denumerateur=distanceb(xa,ya)*distancebc(); //||AB||*||BC||
+
+    if (denumerateur != 0.0) angle=acos(numerateur/denumerateur);
+    else angle=0.0;
+
+    if (ya>yc) angle=PI-angle;
+
+    return (angle*(180.0/PI));
+}
+
+void reconstituerspectre(float** MatRFFT, float** MatIFFT, float** MatriceRadonRFFT, float** MatriceRadonIFFT) {
+    /*int i, j, x, y, angle1, rayon1;
+
+    float angle, rayon, f1, f2;
+    int angle,distance;
+    for(i=0; i<LENGTH/2; i++)
+        for(j=0; j<WIDTH; j++) {
+            //partie reelle
+            MatRFFT[angle][distance]=
+
+            //partie imaginaire
+
+        }*/
+}
+
 /*------------------------------------------------*/
 /* PROGRAMME PRINCIPAL ---------------------------*/
 /*------------------------------------------------*/
+int main(int argc, char** argv)
+{
+    int i, j, k;
+    float **MatriceImgG;
+    float **MatriceRadon;
+    float **MatriceRadonRFFT;
+    float **MatriceRadonIFFT;
+    float **MatriceRadonMFFT;
+    float **MatRFFT;
+    float **MatIFFT;
+    float **MatMFFT;
+    float **Mat1;
+    float **Mat2;
+    float *VctR;
+    float *VctI;
 
-/*
- fonction valeur d'une matrice a un point m[j][i]
-*/
-float f(float** m, int j, int i) {
+    /*Allocation memoire des matrices */
+    MatriceImgG = fmatrix_allocate_2d(LENGTH, WIDTH);
+    MatriceRadon = fmatrix_allocate_2d(LENGTH_RADON, WIDTH_RADON);
+    MatriceRadonRFFT = fmatrix_allocate_2d(LENGTH_RADON, WIDTH_RADON);
+    MatriceRadonIFFT = fmatrix_allocate_2d(LENGTH_RADON, WIDTH_RADON);
+    MatriceRadonMFFT = fmatrix_allocate_2d(LENGTH_RADON, WIDTH_RADON);
+    MatRFFT = fmatrix_allocate_2d(LENGTH, WIDTH);
+    MatIFFT = fmatrix_allocate_2d(LENGTH, WIDTH);
+    MatMFFT = fmatrix_allocate_2d(LENGTH, WIDTH);
+    Mat1 = fmatrix_allocate_2d(LENGTH, WIDTH);
+    Mat2 = fmatrix_allocate_2d(LENGTH, WIDTH);
 
-    if( i <=0 || i >= LENGTH){
+    /*Allocation memoire des vecteurs */
+    VctR = fmatrix_allocate_1d(WIDTH);
+    VctI = fmatrix_allocate_1d(WIDTH);
 
-        return 0.0;}
+    /*Initialisation a zero de toutes les matrices */
+    for (i = 0; i < LENGTH; i++)
+        for (j = 0; j < WIDTH; j++) {
+            MatriceImgG[i][j] = 0.0;
+            MatRFFT[i][j] = 0.0;
+            MatIFFT[i][j] = 0.0;
+            MatMFFT[i][j] = 0.0;
+            Mat1[i][j] = 0.0;
+            Mat2[i][j] = 0.0;
+        }
 
-    else if( j<=0 || j >= WIDTH){
+    for (i = 0; i < LENGTH_RADON; i++)
+        for (j = 0; j < WIDTH_RADON; j++) {
+            MatriceRadon[i][j] = 0.0;
+            MatriceRadonRFFT[i][j] = 0.0;
+            MatriceRadonIFFT[i][j] = 0.0;
+            MatriceRadonMFFT[i][j] = 0.0;
+        }
 
-        return 0.0;}
-
-    return m[i][j];
-}
-/*Interpolation plus proche voisin
- param: float ** dest   : matrice resultat de l'interpolation
-        float ** source : matrice a interpoler
-        float angle     : angle de rotation en degrés
-*/
-void ppv(float** dest,float** source,float angle){
-    //transformer angle en gradient
-    angle= ( angle*M_PI )/180;
-    //Declaration des variables
-    int j1,i1;
-    float jppv,ippv;
-
-    for(int i =0; i < LENGTH; i ++) {
-        for(int j =0; j < WIDTH; j ++) {
-
-            jppv =  (j - WIDTH / 2) * cos(-angle) + (i - LENGTH / 2) * sin(-angle) + WIDTH / 2;
-            ippv = -(j - WIDTH / 2) * sin(-angle) + (i - LENGTH / 2) * cos(-angle) + LENGTH / 2;
-
-            j1 = round(jppv);
-            i1 = round(ippv);
-            //f(x',y')
-            dest[i][j] = f(source, j1, i1);
-            }
-
+    /*Initialisation a zero de tous les vecteurs */
+    for (i = 0; i < WIDTH; i++) {
+        VctR[i] = 0.0;
+        VctI[i] = 0.0;
     }
 
-}
+    //On charge l'image dans MatriceImgG
+    //----------------------------------
+    LoadImagePgm(NAME_IMG_IN, MatriceImgG, LENGTH, WIDTH);
 
-/*interpolation bilineaire
-param:  float ** dest   : matrice resultat de l'interpolation
-        float ** source : matrice a interpoler
-        float angle     : angle de rotation en degrés
-*/
+    for(k=0; k<NB_PROJECTIONS; k++) {
+        //rotation bilineaire d'angle k
+        bilineaire(MatriceImgG, Mat1, k );
 
-void bilineaire(float** dest,float** source,float angle){
-    //transformer angle en gradient
-    angle= ( angle*M_PI )/180;
-    //declaration de variables
-    int xp,yp;
-    float fxpy,fxpy1;
+        //Construction de matrice Radon
+        for(i=0; i<LENGTH; i++)
+            for(j=0; j<WIDTH; j++) {
+                //somme de niveaux de gris
+                MatriceRadon[k][j] += Mat1[i][j];
+            }
+        //construction des VctR a partir de la matrice de Radon
+        for(i=0; i<WIDTH; i++) {
+            VctR[i] = MatriceRadon[k][i];
+            VctI[i] = 0.0;
+        }
+        //Premier Remake vector de VctR et VctI
+        ReMkeVct(VctR, WIDTH);
+        ReMkeVct(VctI, WIDTH);
+        //transformee de fourier pour chaque ligne(vecteur)
+        FFT1D(VctR, VctI, WIDTH);
+        //deuxieme remake vector de la partie reelle et imaginaire obtenue par FFT
+        ReMkeVct(VctR, WIDTH);
+        ReMkeVct(VctI, WIDTH);
 
-    for(int i=0; i<LENGTH; i++) {
 
-        for(int j=0; j<WIDTH; j++) {
-            //x'
-            xp = floor( (j - WIDTH/2) * cos(-angle) + (i - LENGTH/2) * sin(-angle) + WIDTH/2);
-            //y'
-            yp = floor(-(j - WIDTH/2) * sin(-angle) + (i - LENGTH/2) * cos(-angle) + LENGTH/2);
-
-
-            //f(x',y)
-            fxpy = f(source, xp, yp) + (xp - xp)*(f(source, xp + 1, yp) - f(source, xp, yp));
-            //f(x,y+1)
-            fxpy1 = f(source, xp, yp + 1) + (xp - xp) * (f(source, xp + 1, yp + 1) - f(source, xp, yp + 1));
-            //f(x',y')
-            dest[i][j] = fxpy + (yp - yp) * (fxpy1 - fxpy);
+       //Maintenant MatriceRadonRFFT & MatriceRadonIFFT constituent la transformée de Radon de Lenna
+        for(j=0; j<WIDTH; j++) {
+            MatriceRadonRFFT[k][j] = VctR[j];
+            MatriceRadonIFFT[k][j] = VctI[j];
         }
     }
-  }
+
+
+    /*----------------------------------------------------------*/
+    /*Sauvegarde de Lenna sous forme d'image pgms */
+    SaveImagePgm(NAME_IMG_OUT0, MatriceImgG, LENGTH, WIDTH);
+    SaveImagePgm("Radon(c)", MatriceRadonRFFT, LENGTH_RADON, WIDTH_RADON);
 
 
 
-int main()
- {
-  int i,j;
+    //calcul du module de la transformée de radon
+    Mod(MatriceRadonMFFT, MatriceRadonRFFT, MatriceRadonIFFT, LENGTH_RADON, WIDTH_RADON);
 
-  float** MatriceImgG;
-  float** MatriceRadon;
-  float** MatriceRadonRFFT;
-  float** MatriceRadonIFFT;
-  float** MatriceRadonMFFT;
-  float** MatRFFT;
-  float** MatIFFT;
-  float** MatMFFT;
-  float** Mat1;
-  float** Mat2;
-  float** test;
-  float*  VctR;
-  float*  VctI;
-
-  /*Allocation memoire des matrices*/
-  MatriceImgG=fmatrix_allocate_2d(LENGTH,WIDTH);
-  MatriceRadon=fmatrix_allocate_2d(LENGTH_RADON,WIDTH_RADON);
-  MatriceRadonRFFT=fmatrix_allocate_2d(LENGTH_RADON,WIDTH_RADON);
-  MatriceRadonIFFT=fmatrix_allocate_2d(LENGTH_RADON,WIDTH_RADON);
-  MatriceRadonMFFT=fmatrix_allocate_2d(LENGTH_RADON,WIDTH_RADON);
-  MatRFFT=fmatrix_allocate_2d(LENGTH,WIDTH);
-  MatIFFT=fmatrix_allocate_2d(LENGTH,WIDTH);
-  MatMFFT=fmatrix_allocate_2d(LENGTH,WIDTH);
-  Mat1=fmatrix_allocate_2d(LENGTH,WIDTH);
-  test=fmatrix_allocate_2d(LENGTH,WIDTH);
-
-  Mat2=fmatrix_allocate_2d(LENGTH,WIDTH);
-
-  /*Allocation memoire des vecteurs*/
-  VctR=fmatrix_allocate_1d(WIDTH);
-  VctI=fmatrix_allocate_1d(WIDTH);
-
-  /*Initialisation a zero de toutes les matrices*/
-  for(i=0;i<LENGTH;i++) for(j=0;j<WIDTH;j++)
-   { MatriceImgG[i][j]=0.0;
-     MatRFFT[i][j]=0.0;
-     MatIFFT[i][j]=0.0;
-     MatMFFT[i][j]=0.0;
-     Mat1[i][j]=0.0;
-     Mat2[i][j]=0.0; }
-
-  for(i=0;i<LENGTH_RADON;i++) for(j=0;j<WIDTH_RADON;j++)
-     { MatriceRadon[i][j]=0.0;
-       MatriceRadonRFFT[i][j]=0.0;
-       MatriceRadonIFFT[i][j]=0.0;
-       MatriceRadonMFFT[i][j]=0.0; }
-
-  /*Initialisation a zero de tous les vecteurs*/
-   for(i=0;i<WIDTH;i++)
-     { VctR[i]=0.0;
-       VctI[i]=0.0; }
-
-   //On charge l'image dans MatriceImgG
-   //----------------------------------
-   LoadImagePgm(NAME_IMG_IN, MatriceImgG, LENGTH, WIDTH);
-   /* Interpolation bilineaire = deux directions a interpoler*/
-   //ppv(Mat1, MatriceImgG, 45);
-   bilineaire(test,MatriceImgG,45);
+    SaveImagePgm(NAME_IMG_OUT1, MatriceRadonMFFT, LENGTH_RADON, WIDTH_RADON);
 
 
-  //-----------------------
-  //Nouvelles Fonctions ---
-  //-----------------------
-  /*----------------------------------------------------------------------*/
-  /* Transforme de Fourier monodimensionnelle:                            */
-  /* ----------------------------------------                             */
-  /* FFT1D(VctR,VctI,WIDTH)                                               */
-  /*                                                                      */
-  /* VctR: vecteur associe au valeurs reelles                             */
-  /* VctI: vecteur associe au valeurs imaginaires                         */
-  /* WIDTH      : Largeur des deux vecteurs                               */
-  /* ------                                                               */
-  /* Resultat de cette FFT:                                               */
-  /* VctR: Partie reelle de la FFT                                        */
-  /* VctI: Partie imaginaire de la FFT                                    */
-  /*----------------------------------------------------------------------*/
-  /*----------------------------------------------------------------------*/
-  /* Transforme de Fourier monodimensionnelle inverse:                    */
-  /* ------------------------------------------------                     */
-  /* IFFTDD(VctR,VctI,WIDTH)                                              */
-  /*                                                                      */
-  /* VctR: vecteur associe au valeurs reelles                             */
-  /* VctI: vecteur associe au valeurs imaginaires                         */
-  /* WIDTH      : Largeur des deux vecteurs                               */
-  /* ------                                                               */
-  /* Resultat de cette FFT inverse:                                       */
-  /* VctR: Partie reelle de la FFT inverse                                */
-  /* VctI: Partie imaginaire de la FFT inverse                            */
-  /*----------------------------------------------------------------------*/
-  /*----------------------------------------------------------------------*/
-  /* ReMkeVct(Vct,WIDTH)                                                  */
-  /* --------------------------                                           */
-  /* Recadre le Vecteur Vct de largeur WIDTH                              */
-  /* selon les 2 cadrants                                                 */
-  /*----------------------------------------------------------------------*/
-  /*----------------------------------------------------------------------*/
-  /* Module de la FFT1D                                                   */
-  /* ------------------                                                   */
-  /* ModVct(VctM,VctR,VctI,WIDTH)                                         */
-  /*                                                                      */
-  /* VctR: partie reelle du vecteur                                       */
-  /* VctI: partie imaginaire du vecteur                                   */
-  /* ------                                                               */
-  /* Resultat:                                                            */
-  /* VctM: module du vecteur                                              */
-  /*----------------------------------------------------------------------*/
+    //reconstruction
+    reconstituerspectre(MatRFFT, MatIFFT, MatriceRadonRFFT, MatriceRadonIFFT);
 
 
-  /*-------- FIN ---------------------------------------------*/
-  /*----------------------------------------------------------*/
-  /*Sauvegarde des matrices sous forme d'image pgms*/
-  SaveImagePgm(NAME_IMG_OUT0,test,LENGTH,WIDTH);
+    ReMkeImg(MatRFFT, LENGTH, WIDTH);
+    ReMkeImg(MatIFFT, LENGTH, WIDTH);
 
-  /*Liberation memoire pour les matrices*/
-  free_fmatrix_2d(MatriceImgG);
-  free_fmatrix_2d(MatriceRadon);
-  free_fmatrix_2d(MatriceRadonRFFT);
-  free_fmatrix_2d(MatriceRadonIFFT);
-  free_fmatrix_2d(MatriceRadonMFFT);
-  free_fmatrix_2d(MatRFFT);
-  free_fmatrix_2d(MatIFFT);
-  free_fmatrix_2d(MatMFFT);
-  free_fmatrix_2d(Mat1);
-  free_fmatrix_2d(Mat2);
 
-  /*Liberation memoire pour les vecteurs*/
-  free(VctR);
-  free(VctI);
 
-  /*Commande systeme: visualisation de Ingout.pgm*/
-  system("display ImgOut0.pgm&");
+    IFFTDD(MatRFFT, MatIFFT, LENGTH, WIDTH);
+    //mettre l'image au centre
+    ReMkeImg(MatRFFT, LENGTH, WIDTH);
+    //pour visualisation
+    Recal(MatRFFT, LENGTH, WIDTH);
+    //RecalMoy(MatRFFT, MatriceImgG, LENGTH, WIDTH);
+    SaveImagePgm(NAME_IMG_OUT2, MatRFFT, LENGTH, WIDTH);
 
-  /*retour sans probleme*/
-  printf("\n C'est fini ... \n\n\n");
-  return 0;
+
+    /*Liberation memoire pour les matrices */
+    free_fmatrix_2d(MatriceImgG);
+    free_fmatrix_2d(MatriceRadon);
+    free_fmatrix_2d(MatriceRadonRFFT);
+    free_fmatrix_2d(MatriceRadonIFFT);
+    free_fmatrix_2d(MatriceRadonMFFT);
+    free_fmatrix_2d(MatRFFT);
+    free_fmatrix_2d(MatIFFT);
+    free_fmatrix_2d(MatMFFT);
+    free_fmatrix_2d(Mat1);
+    free_fmatrix_2d(Mat2);
+
+    /*Liberation memoire pour les vecteurs */
+    free(VctR);
+    free(VctI);
+
+    /*Commande systeme: visualisation de Imgout.pgm */
+    // system("display ImgOut0.pgm&");
+
+    /*retour sans probleme */
+    printf("\n C'est fini ... \n\n\n");
+    //printf("%f",distanceb(64,0));
+    printf("%f",theta(10,120));
+    return 0;
 }
 
+//-----------------------
+//Nouvelles Fonctions ---
+//-----------------------
+/*----------------------------------------------------------------------*/
+/* Transforme de Fourier monodimensionnelle:                            */
+/* ----------------------------------------                             */
+/* FFT1D(VctR,VctI,WIDTH)                                               */
+/*                                                                      */
+/* VctR: vecteur associe au valeurs reelles                             */
+/* VctI: vecteur associe au valeurs imaginaires                         */
+/* WIDTH      : Largeur des deux vecteurs                               */
+/* ------                                                               */
+/* Resultat de cette FFT:                                               */
+/* VctR: Partie reelle de la FFT                                        */
+/* VctI: Partie imaginaire de la FFT                                    */
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+/* Transforme de Fourier monodimensionnelle inverse:                    */
+/* ------------------------------------------------                     */
+/* IFFTDD(VctR,VctI,WIDTH)                                              */
+/*                                                                      */
+/* VctR: vecteur associe au valeurs reelles                             */
+/* VctI: vecteur associe au valeurs imaginaires                         */
+/* WIDTH      : Largeur des deux vecteurs                               */
+/* ------                                                               */
+/* Resultat de cette FFT inverse:                                       */
+/* VctR: Partie reelle de la FFT inverse                                */
+/* VctI: Partie imaginaire de la FFT inverse                            */
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+/* ReMkeVct(Vct,WIDTH)                                                  */
+/* --------------------------                                           */
+/* Recadre le Vecteur Vct de largeur WIDTH                              */
+/* selon les 2 cadrants                                                 */
+/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------*/
+/* Module de la FFT1D                                                   */
+/* ------------------                                                   */
+/* ModVct(VctM,VctR,VctI,WIDTH)                                         */
+/*                                                                      */
+/* VctR: partie reelle du vecteur                                       */
+/* VctI: partie imaginaire du vecteur                                   */
+/* ------                                                               */
+/* Resultat:                                                            */
+/* VctM: module du vecteur                                              */
+/*----------------------------------------------------------------------*/
+
+/*-------- FIN ---------------------------------------------*/
