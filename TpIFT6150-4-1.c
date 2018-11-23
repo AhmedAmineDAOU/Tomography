@@ -111,7 +111,7 @@ float theta(int xa,int ya)
 {
     float numerateur, denumerateur, angle;
     //initialisation
-     numerateur=denumerateur=angle=0.0;
+    numerateur=denumerateur=angle=0.0;
     //produit scalaire des vecteur BC et BA
     numerateur=(xa-xb)*(xc-xb) +(ya-yb)*(yc-yb);
 
@@ -121,7 +121,6 @@ float theta(int xa,int ya)
     if (denumerateur != 0.0) angle=acos(numerateur/denumerateur);
     else angle=0.0;
 
-    if (ya>yc) angle=PI-angle;
 
     return (angle*(180.0/PI));
 }
@@ -133,15 +132,43 @@ float theta(int xa,int ya)
         : MatriceRadonIFFT radon partie imaginaire
 */
 void reconstituerspectre(float** MatRFFT, float** MatIFFT, float** MatriceRadonRFFT, float** MatriceRadonIFFT) {
-    int i, j, x, y;
+    float f1,f2;
 
-    float angle, rayon;
-    for(i=0; i<LENGTH/2; i++)
-        for(j=0; j<WIDTH; j++) {
+    float Theta, rho;int Theta_p,rho_p;
+    for(int i=0; i<LENGTH/2; i++)
+        for(int j=0; j<WIDTH; j++) {
+                //partie reelle de matRFFT
+                Theta =  theta(i,j);
+                rho =  distanceb(i,j);
 
+                Theta_p =  floor(theta(i,j));
+                rho_p =  floor(distanceb(i,j));
+
+
+
+
+
+          f1 = MatriceRadonRFFT[Theta_p-1][rho_p] + (Theta - Theta_p )*(MatriceRadonRFFT[Theta_p-1][rho_p] - MatriceRadonRFFT[Theta_p-1][rho_p]);
+            f2 = MatriceRadonRFFT[Theta_p-1][rho_p ]
+                + (Theta - Theta_p) * (MatriceRadonRFFT[Theta_p-1][rho_p ] - MatriceRadonRFFT[Theta_p-1][(rho_p + 1) % WIDTH_RADON]);
+
+            MatRFFT[i][j] = f1 + (rho -rho_p) * (f2 - f1);
+            MatRFFT[LENGTH - 1 - i][(WIDTH - j) % WIDTH] = f1 + (rho -rho_p) * (f2 - f1);
+
+            // Calcul de MatIFFT
+            f1 = MatriceRadonIFFT[Theta_p-1][rho_p] + (Theta - Theta_p)*(MatriceRadonIFFT[Theta_p -1][rho_p] - MatriceRadonIFFT[Theta_p-1][rho_p]);
+            f2 = MatriceRadonIFFT[Theta_p-1][rho_p ]
+                + (Theta - Theta_p) * (MatriceRadonIFFT[Theta_p -1][rho_p ] - MatriceRadonIFFT[Theta_p-1][rho_p ]);
+
+            MatIFFT[i][j] = -(f1 + (rho - rho_p) * (f2 - f1));
+            MatIFFT[LENGTH - 1 - i][(WIDTH - j) % WIDTH] = f1 + (rho - rho_p) * (f2 - f1);
 
         }
+
+
+
 }
+
 
 /*------------------------------------------------*/
 /* PROGRAMME PRINCIPAL ---------------------------*/
@@ -293,7 +320,7 @@ int main(int argc, char** argv)
     /*retour sans probleme */
     printf("\n C'est fini ... \n\n\n");
     //printf("%f",distanceb(64,0));
-    printf("%f",theta(10,120));
+
     return 0;
 }
 
