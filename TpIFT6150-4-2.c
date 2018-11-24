@@ -1,5 +1,5 @@
 /*------------------------------------------------------*/
-/* Prog    : TpIFT6150-4-2                             */
+/* Prog    : TpIFT6150-4-2                              */
 /* Auteur  : Ahmed Amine DAOU & Warshe Wrushabh         */
 /* Date    :                                            */
 /* version :                                            */
@@ -46,13 +46,13 @@
 /* FONCTIONS -------------------------------------*/
 /*------------------------------------------------*/
 
-float f(float** m, int j, int i) {
+float f(float** Mat, int j, int i) {
 
     if(i < 0 || i >= LENGTH) {i = (i + LENGTH) % LENGTH;}
 
     if(j < 0 || j >= WIDTH) {j = (j + WIDTH) % WIDTH;}
 
-    return m[i][j];
+    return Mat[i][j];
 }
 
 /* Rotation d'un angle theta avec l'interpolation plus proche voisin
@@ -201,7 +201,7 @@ int main(int argc, char** argv)
     //----------------------------------
     LoadImagePgm(NAME_IMG_IN, MatriceImgG, LENGTH, WIDTH);
 
-    for(p=0; p<NB_PROJECTIONS; p++) {
+    for(p=0; p < NB_PROJECTIONS ; p++) {
         //rotation bilineaire d'angle p
         plusProcheVoisin(MatriceImgG, Mat1, p );
 
