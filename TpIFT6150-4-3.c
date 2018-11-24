@@ -14,7 +14,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include "FonctionDemo.h"
 
 /*------------------------------------------------*/
@@ -28,14 +27,16 @@
 #define NAME_IMG_OUT3 "ImgOut3"
 #define NAME_IMG_OUT4 "ImgOut4"
 #define NAME_IMG_OUT5 "ImgOut5"
+#define NAME ""
 
-#define NB_PROJECTIONS 180
+#define NB_PROJECTIONS 90
 #define LENGTH 128
 #define WIDTH  128
 #define xb WIDTH/2
 #define yb LENGTH/2
 #define xc WIDTH
 #define yc LENGTH/2
+
 
 
 
@@ -160,6 +161,12 @@ void reconstituerspectre(float** FR, float** FI, float** RR, float** RI) {
 /*------------------------------------------------*/
 int main(int argc, char** argv)
 {
+     char s[] ="ImgOut4";
+    #if NB_PROJECTIONS == 45
+        s="ImgOut5"
+    #endif // NB_PROJECTIONS
+
+
     int i, j, p;
     float **MatriceImgG;
     float **MatriceRadon;
@@ -251,18 +258,13 @@ int main(int argc, char** argv)
         }
     }
 
-
+    printf("Merci de changer le nombre de projection avant l'execution\n");
     /*----------------------------------------------------------*/
-    /*Sauvegarde de Lenna sous forme d'image pgms */
-    SaveImagePgm(NAME_IMG_OUT0, MatriceImgG, LENGTH, WIDTH);
-    SaveImagePgm("Radon(c)", MatriceRadonRFFT, LENGTH_RADON, WIDTH_RADON);
-
 
 
     //calcul du module de la transformée de radon
     Mod(MatriceRadonMFFT, MatriceRadonRFFT, MatriceRadonIFFT, LENGTH_RADON, WIDTH_RADON);
 
-    SaveImagePgm(NAME_IMG_OUT1, MatriceRadonMFFT, LENGTH_RADON, WIDTH_RADON);
 
 
     //reconstruction
@@ -280,7 +282,7 @@ int main(int argc, char** argv)
     //pour visualisation
     Recal(MatRFFT, LENGTH, WIDTH);
     //RecalMoy(MatRFFT, MatriceImgG, LENGTH, WIDTH);
-    SaveImagePgm(NAME_IMG_OUT2, MatRFFT, LENGTH, WIDTH);
+    SaveImagePgm(s, MatRFFT, LENGTH, WIDTH);
 
 
     /*Liberation memoire pour les matrices */
@@ -305,46 +307,6 @@ int main(int argc, char** argv)
     //printf("%f",distanceb(64,0));
 
     return 0;
-
-//NON UTIILSEES
-
-/*distancebc: distance entre B et C*/
-float distancebc(){ return sqrt(CARRE(xc-xb)+CARRE (yc-yb)); }
-
-/*distanceb: distance entre A et B
-  param: coordonnées du point A
-*/
-float distanceb(int xa,int ya){ return  sqrt(CARRE(xa-xb)+CARRE(ya-yb)); }
-
-/*distancec: distance entre a c
-*/
-float distancec(int xa,int ya){ return  sqrt(CARRE(xa-xc)+CARRE(ya-yc)); }
-
-/*rayon : calcule l'angle entre BC et BA
-  calcule le produit scalaire BC.BA (numerateur du cos)
-  calcule le produit des normes des vecteurs BC ET BA (denumerateur du cos)
-  puis calcule l'arctangente de la fraction =>arcos(cos(rayon))
-  param: coordonnées du point A
- *return: angle rayon
-*/
-float theta2(int xa,int ya)
-{
-    float numerateur, denumerateur, angle;
-    //initialisation
-    numerateur=denumerateur=angle=0.0;
-    //produit scalaire des vecteur BC et BA
-    numerateur=(xa-xb)*(xc-xb) +(ya-yb)*(yc-yb);
-
-    //produit des normes
-    denumerateur=distanceb(xa,ya)*distancebc(); //||AB||*||BC||
-
-    if (denumerateur != 0.0) angle=acos(numerateur/denumerateur);
-    else angle=0.0;
-
-
-    return (angle*(180.0/PI));
-}
-
 
 
 }

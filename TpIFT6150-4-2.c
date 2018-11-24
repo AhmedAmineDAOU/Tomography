@@ -1,5 +1,5 @@
 /*------------------------------------------------------*/
-/* Prog    : TpIFT6150-4-1                              */
+/* Prog    : TpIFT6150-4-2                             */
 /* Auteur  : Ahmed Amine DAOU & Warshe Wrushabh         */
 /* Date    :                                            */
 /* version :                                            */
@@ -55,33 +55,28 @@ float f(float** m, int j, int i) {
     return m[i][j];
 }
 
-/* Rotation d'un angle theta avec l'interpolation bilineaire
+/* Rotation d'un angle theta avec l'interpolation plus proche voisin
    param: FR spectre Fourier partie reelle
         : FI spectre Fourier partie imaginaire
         : RR radon partie reelle
         : RI radon partie imaginaire
 */
 
-void bilineaire(float** source, float** dest, float angle) {
-    int x,y;
-    float xp,yp,fxpy,fxpy1;
+void plusProcheVoisin(float** source, float** dest, float angle) {
+
+    float xp,yp;
     angle=angle*PI/180;
 
     for(int i=0; i<LENGTH; i++) {
         for(int j=0; j<WIDTH; j++) {
-            //x'
+
             xp =  (j - WIDTH/2) * cos(-angle) + (i - LENGTH/2) * sin(-angle) + WIDTH/2;
-            //y'
             yp = -(j - WIDTH/2) * sin(-angle) + (i - LENGTH/2) * cos(-angle) + LENGTH/2;
 
-            x = floor(xp);
-            y = floor(yp);
-            //f(x,y')
-            fxpy = f(source, x, y) + (xp - x)*(f(source, x + 1, y) - f(source, x, y));
-            //f(x',y+1)
-            fxpy1 = f(source, x, y + 1)+ (xp - x) * (f(source, x + 1, y + 1) - f(source, x, y + 1));
-            //f(x',y')
-            dest[i][j] = fxpy + (yp - y) * (fxpy1 - fxpy);
+            xp = floor(xp);
+            yp = floor(yp);
+
+            dest[i][j] = f(source, xp, yp);
         }
     }
 }
@@ -119,8 +114,8 @@ float AngleDeg(int ptar,int ptac,int ptbr,int ptbc,int ptcr,int ptcc)
         : RI radon partie imaginaire
 */
 void reconstituerspectre(float** FR, float** FI, float** RR, float** RI) {
-    int  x, y, thetap, rhop;
-    float theta, rho, fxpy, fxpy1;
+    int  x, y;
+    float theta, rho;
     //parcourir moitié haute des matrice
     //suffisante car les matrices de radon et de Fourier sont (reelle->paire) (imaginaire->impaire)
     for(int i=0; i<LENGTH/2; i++)
@@ -133,24 +128,11 @@ void reconstituerspectre(float** FR, float** FI, float** RR, float** RI) {
 
             theta = fmod(NB_PROJECTIONS - floor(AngleDeg(x, y, 0, 0, xc, 0)), NB_PROJECTIONS);
 
-            thetap = floor(theta);
-            rhop = floor(rho);
+            FR[i][j] = RR[(int) theta][(int) rho];
+            FI[i][j] = -RI[(int) theta][(int) rho];
 
-            // Partie reelle du spectre
-            fxpy  = RR[thetap][rhop] + (theta - thetap) * (RR[thetap][rhop] - RR[thetap][rhop]);
-            fxpy1 = RR[thetap][rhop]+ (theta - thetap) * (RR[thetap][rhop] - RR[thetap][rhop]);
-
-            //paire===> f(-x)= f(x)
-            FR[i][j] = fxpy + (rho - rhop) * (fxpy1 - fxpy);
-            FR[LENGTH - 1 - i][WIDTH - j] = fxpy + (rho - rhop) * (fxpy1 - fxpy);
-
-            // Partie Imaginaire spectre
-            fxpy = RI[thetap][rhop] + (theta - thetap)*(RI[thetap][rhop] - RI[thetap][rhop]);
-            fxpy1 = RI[thetap][rhop]+ (theta - thetap) * (RI[thetap][rhop] - RI[thetap][rhop]);
-            //Impaire===> f(-x)= - f(x)
-            FI[i][j] = -(fxpy + (rho - rhop) * (fxpy1 - fxpy));
-            FI[LENGTH - 1 - i][WIDTH - j] = fxpy + (rho - rhop) * (fxpy1 - fxpy);
-
+            FR[LENGTH - 1 - i][(WIDTH - j) % WIDTH] = RR[(int) theta][(int) rho];
+            FI[LENGTH - 1 - i][(WIDTH - j) % WIDTH] = RI[(int) theta][(int) rho];
         }
 }
 
@@ -221,7 +203,7 @@ int main(int argc, char** argv)
 
     for(p=0; p<NB_PROJECTIONS; p++) {
         //rotation bilineaire d'angle p
-        bilineaire(MatriceImgG, Mat1, p );
+        plusProcheVoisin(MatriceImgG, Mat1, p );
 
         //Construction de matrice Radon
         for(i=0; i<LENGTH; i++)
@@ -258,13 +240,6 @@ int main(int argc, char** argv)
     SaveImagePgm("Radon(c)", MatriceRadonRFFT, LENGTH_RADON, WIDTH_RADON);
 
 
-
-    //calcul du module de la transformée de radon
-    Mod(MatriceRadonMFFT, MatriceRadonRFFT, MatriceRadonIFFT, LENGTH_RADON, WIDTH_RADON);
-
-    SaveImagePgm(NAME_IMG_OUT1, MatriceRadonMFFT, LENGTH_RADON, WIDTH_RADON);
-
-
     //reconstruction
     reconstituerspectre(MatRFFT, MatIFFT, MatriceRadonRFFT, MatriceRadonIFFT);
 
@@ -280,7 +255,7 @@ int main(int argc, char** argv)
     //pour visualisation
     Recal(MatRFFT, LENGTH, WIDTH);
     //RecalMoy(MatRFFT, MatriceImgG, LENGTH, WIDTH);
-    SaveImagePgm(NAME_IMG_OUT2, MatRFFT, LENGTH, WIDTH);
+    SaveImagePgm(NAME_IMG_OUT3, MatRFFT, LENGTH, WIDTH);
 
 
     /*Liberation memoire pour les matrices */
@@ -306,46 +281,8 @@ int main(int argc, char** argv)
 
     return 0;
 
-//NON UTIILSEES
-
-/*distancebc: distance entre B et C*/
-float distancebc(){ return sqrt(CARRE(xc-xb)+CARRE (yc-yb)); }
-
-/*distanceb: distance entre A et B
-  param: coordonnées du point A
-*/
-float distanceb(int xa,int ya){ return  sqrt(CARRE(xa-xb)+CARRE(ya-yb)); }
-
-/*distancec: distance entre a c
-*/
-float distancec(int xa,int ya){ return  sqrt(CARRE(xa-xc)+CARRE(ya-yc)); }
-
-/*rayon : calcule l'angle entre BC et BA
-  calcule le produit scalaire BC.BA (numerateur du cos)
-  calcule le produit des normes des vecteurs BC ET BA (denumerateur du cos)
-  puis calcule l'arctangente de la fraction =>arcos(cos(rayon))
-  param: coordonnées du point A
- *return: angle rayon
-*/
-float theta2(int xa,int ya)
-{
-    float numerateur, denumerateur, angle;
-    //initialisation
-    numerateur=denumerateur=angle=0.0;
-    //produit scalaire des vecteur BC et BA
-    numerateur=(xa-xb)*(xc-xb) +(ya-yb)*(yc-yb);
-
-    //produit des normes
-    denumerateur=distanceb(xa,ya)*distancebc(); //||AB||*||BC||
-
-    if (denumerateur != 0.0) angle=acos(numerateur/denumerateur);
-    else angle=0.0;
-
-
-    return (angle*(180.0/PI));
-}
-
 
 
 }
+
 
