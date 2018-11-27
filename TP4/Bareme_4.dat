@@ -1,0 +1,44 @@
+IFT6150 Automne 2018 TP4
+
+L'énoncé du tp ainsi que les programmes fournis se trouvent sur le site 
+du cours:
+
+http://www.iro.umontreal.ca/~mignotte/ift6150.html
+
+Le tp est à remettre avant 16:30 le 30 Novembre 2018
+Pénalité de 10% par 24h de retard.
+
+
+Vous devez fournir le programme suivant:
+
+     TpIFT6150-5-1.c
+     TpIFT6150-5-2.c
+     TpIFT6150-5-3.c 
+
+qui doit produire les images demandées dans l'énoncé du TP4
+pour la question 1, 2 et 3.
+
+Le programme doit compiler sous Linux.
+
+                               *****
+
+Barême pour le TP5 (Le maximum des points alloués est indiqué ci-dessous):
+
+Style de programmation: 10 points
+
+Exécution des programmes et implémentation des algorithmes: 90 points
+         Distribution des points par question:
+	 - fonction de rotation: 15
+         - interpolation bilineaire: 15
+         - FT de la Radon lignes par lignes: 15
+	 - interpolation bilineaire pour retrouver la FT 2D: 15 
+         - TF inverse: 15
+	 - option interpolation directe pour retrouver la FT 2D: 7.5 
+	 - Option 90 ou 45 angles pour la transformee de radon: 7.5
+
+
+Il n'y pas de rapport écrit à remettre
+
+
+Total: 100 points.
+
