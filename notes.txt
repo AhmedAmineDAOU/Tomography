@@ -1,4 +1,3 @@
-Transformée de RADON
 
 evaluer l'ensemble des projection circulaire p\theta pour les angles 
 0->179 pas de 1deg

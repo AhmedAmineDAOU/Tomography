@@ -244,23 +244,25 @@ int main(int argc, char** argv)
     /*----------------------------------------------------------*/
     /*Sauvegarde des matrices sous forme d'image pgms */
 
+    //module de la transformee de radon
     Mod(MatriceRadonMFFT, MatriceRadonRFFT, MatriceRadonIFFT, LENGTH_RADON, WIDTH_RADON);
-
-
+    
+    //reconstruction
     reconstituerspectre(MatRFFT, MatIFFT, MatriceRadonRFFT, MatriceRadonIFFT);
 
     Mod(MatMFFT, MatRFFT, MatIFFT, LENGTH, WIDTH);
-
+    //Remake image partie reelle & imaginaire du spectre
     ReMkeImg(MatRFFT, LENGTH, WIDTH);
     ReMkeImg(MatIFFT, LENGTH, WIDTH);
-
+    //transformee de fourier inverse
     IFFTDD(MatRFFT, MatIFFT, LENGTH, WIDTH);
-
+    //remake image de la reconstruction
     ReMkeImg(MatRFFT, LENGTH, WIDTH);
 
+    //pour visualisation
     Recal(MatRFFT, LENGTH, WIDTH);
 
-
+    //changer le nom de l'image suivant l'angle choisi
     if (NB_PROJECTIONS == 90) SaveImagePgm(NAME_IMG_OUT4, MatRFFT, LENGTH, WIDTH);
     else if (NB_PROJECTIONS ==45 ) SaveImagePgm(NAME_IMG_OUT5, MatRFFT, LENGTH, WIDTH);
 
@@ -281,9 +283,7 @@ int main(int argc, char** argv)
     free(VctR);
     free(VctI);
 
-    /*Commande systeme: visualisation de Imgout.pgm */
-    // system("display ImgOut0.pgm&");
-
+    
     /*retour sans probleme */
     printf("\n C'est fini ... \n\n\n");
     return 0;

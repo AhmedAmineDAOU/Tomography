@@ -243,7 +243,7 @@ int main(int argc, char** argv)
     //reconstruction
     reconstituerspectre(MatRFFT, MatIFFT, MatriceRadonRFFT, MatriceRadonIFFT);
 
-    //Remake vector partie reelle & imaginaire du spectre
+    //Remake image partie reelle & imaginaire du spectre
     ReMkeImg(MatRFFT, LENGTH, WIDTH);
     ReMkeImg(MatIFFT, LENGTH, WIDTH);
 
